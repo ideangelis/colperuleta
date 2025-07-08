@@ -105,7 +105,7 @@
       "Sellos/GRASASSAT.png",
       "Sellos/CALORIAS.png",
       "Sellos/SODIO.png",
-      "Sellos/ULTRAPROCESADO.png" // imagen de relleno, reemplazala si querés
+      "Sellos/ULTRAPROCESADO.png"
     ];
 
     const ruleta = document.getElementById("ruleta");
@@ -136,16 +136,30 @@
         ruleta.appendChild(path);
 
         const angle = (i + 0.5) * sectorAngle;
-        const imgRadius = radio - 72;
-        const imgX = imgRadius * Math.cos(angle * Math.PI / 180) - 62.5;
-        const imgY = imgRadius * Math.sin(angle * Math.PI / 180) - 62.5;
+        const angleRad = angle * Math.PI / 180;
+        const baseRadius = radio - 80;
+
+        // Tamaños individuales corregidos y centrado correcto
+        let imgWidth = 125;
+        let imgHeight = 125;
+
+        if (sellos[i].includes("CAFEINA.png")) {
+          imgWidth = 150;
+          imgHeight = 150;
+        } else if (sellos[i].includes("EDULCORANTES.png")) {
+          imgWidth = 150;
+          imgHeight = 150;
+        }
+
+        const imgX = baseRadius * Math.cos(angleRad) - imgWidth / 2;
+        const imgY = baseRadius * Math.sin(angleRad) - imgHeight / 2;
 
         const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
         img.setAttribute("href", sellos[i]);
         img.setAttribute("x", imgX);
         img.setAttribute("y", imgY);
-        img.setAttribute("width", 125);
-        img.setAttribute("height", 125);
+        img.setAttribute("width", imgWidth);
+        img.setAttribute("height", imgHeight);
         img.style.pointerEvents = "none";
         ruleta.appendChild(img);
       }
@@ -153,7 +167,6 @@
 
     dibujarRuleta();
 
-    // Rotación y física
     let currentAngle = 0;
     let isDragging = false;
     let startAngle = 0;
@@ -216,7 +229,9 @@
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
-      const sector = Math.floor((360 - (currentAngle % 360) + sectorAngle / 2) % 360 / sectorAngle);
+      const normalizedAngle = (360 - (currentAngle % 360) + 360) % 360;
+      const sector = Math.floor(normalizedAngle / sectorAngle);
+
       if (spinDecay.previousSector !== sector) {
         spinDecay.previousSector = sector;
         playClickSound();
