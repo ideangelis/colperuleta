@@ -14,14 +14,26 @@
       padding: 20px;
       -webkit-user-select: none;
       user-select: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
     }
 
     #ruleta-container {
-      position: relative;
       width: 100%;
-      max-width: 600px;
+      max-width: 90vw;
+      max-height: 90vh;
       aspect-ratio: 1 / 1;
-      margin: 0 auto;
+      margin: auto;
+      position: relative;
       touch-action: none;
       cursor: grab;
     }
@@ -63,11 +75,6 @@
     @keyframes latido {
       0%, 100% { transform: translateX(-50%) rotate(180deg) scale(1); }
       50% { transform: translateX(-50%) rotate(180deg) scale(1.1); }
-    }
-
-    h2 {
-      font-size: 20px;
-      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -114,6 +121,15 @@
     const audio = document.getElementById("audio");
     const sectorAngle = 360 / 7;
 
+    let currentAngle = 0;
+    let isDragging = false;
+    let startAngle = 0;
+    let lastAngle = 0;
+    let lastTime = 0;
+    let velocity = 0;
+    let animationFrameId;
+    let escalaActual = 1; // escala dinámica para ruleta
+
     function dibujarRuleta() {
       ruleta.innerHTML = '';
       for (let i = 0; i < 7; i++) {
@@ -139,7 +155,6 @@
         const angleRad = angle * Math.PI / 180;
         const baseRadius = radio - 80;
 
-        // Tamaños individuales corregidos y centrado correcto
         let imgWidth = 125;
         let imgHeight = 125;
 
@@ -165,15 +180,18 @@
       }
     }
 
-    dibujarRuleta();
+    function ajustarEscala() {
+      const rect = svg.getBoundingClientRect();
+      const tamañoDisponible = Math.min(rect.width, rect.height);
+      const escala = tamañoDisponible / (2 * radio);
+      escalaActual = Math.min(escala, 1);
+      ruleta.setAttribute("transform", `translate(300 300) scale(${escalaActual}) rotate(${currentAngle})`);
+    }
 
-    let currentAngle = 0;
-    let isDragging = false;
-    let startAngle = 0;
-    let lastAngle = 0;
-    let lastTime = 0;
-    let velocity = 0;
-    let animationFrameId;
+    dibujarRuleta();
+    ajustarEscala();
+
+    window.addEventListener("resize", ajustarEscala);
 
     function getAngle(x, y) {
       const rect = svg.getBoundingClientRect();
@@ -204,7 +222,7 @@
 
       delta *= 0.6;
       currentAngle += delta;
-      ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
+      ruleta.setAttribute("transform", `translate(300 300) scale(${escalaActual}) rotate(${currentAngle})`);
 
       const now = performance.now();
       velocity = (nowAngle - lastAngle) / ((now - lastTime) / 1000);
@@ -227,7 +245,7 @@
     function spinDecay() {
       velocity *= 0.97;
       currentAngle += velocity;
-      ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
+      ruleta.setAttribute("transform", `translate(300 300) scale(${escalaActual}) rotate(${currentAngle})`);
 
       const normalizedAngle = (360 - (currentAngle % 360) + 360) % 360;
       const sector = Math.floor(normalizedAngle / sectorAngle);
