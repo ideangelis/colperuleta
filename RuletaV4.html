@@ -188,6 +188,9 @@
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
+      // Suavizar el desplazamiento del giro multiplicando delta por 0.6 (menos brusco)
+      delta *= 0.6;
+
       currentAngle += delta;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
@@ -210,7 +213,8 @@
     }
 
     function spinDecay() {
-      velocity *= 0.95;
+      // Menor fricción para frenado más suave (antes 0.95, ahora 0.97)
+      velocity *= 0.97;
 
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
@@ -221,7 +225,7 @@
         playClickSound();
       }
 
-      if (Math.abs(velocity) > 0.1) {
+      if (Math.abs(velocity) > 0.05) { // se puede bajar el umbral para que frene aún más lento
         animationFrameId = requestAnimationFrame(spinDecay);
       } else {
         animationFrameId = null;
