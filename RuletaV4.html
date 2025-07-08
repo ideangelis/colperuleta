@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ruleta Nutricional</title>
-    <!-- Favicon -->
   <link rel="icon" type="image/png" href="ColPE-Favicon.png" />
   <style>
     body {
@@ -94,27 +93,27 @@
   </audio>
 
   <script>
-    // Cambié las etiquetas a 7, eliminando "Ultra Procesado"
-    const etiquetas = [
-      "Azúcares", "Grasas Saturadas", "Sodio", "Calorías",
-      "Edulcorantes", "Cafeína", "Grasas Trans"
-    ];
-
-    // Colores para 7 sectores
     const colores = [
       "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71",
       "#3498db", "#9b59b6", "#34495e"
+    ];
+
+    const sellos = [
+      "Sellos/EDULCORANTES.png",
+      "Sellos/CAFEINA.png",
+      "Sellos/AZUCARES.png",
+      "Sellos/GRASASSAT.png",
+      "Sellos/CALORIAS.png",
+      "Sellos/SODIO.png",
+      "Sellos/ULTRAPROCESADO.png" // imagen de relleno, reemplazala si querés
     ];
 
     const ruleta = document.getElementById("ruleta");
     const svg = document.getElementById("svgRuleta");
     const radio = 270;
     const audio = document.getElementById("audio");
-
-    // Ángulo por sector: 360 grados dividido 7
     const sectorAngle = 360 / 7;
 
-    // Dibujar sectores y etiquetas con imágenes
     function dibujarRuleta() {
       ruleta.innerHTML = '';
       for (let i = 0; i < 7; i++) {
@@ -136,42 +135,25 @@
         path.setAttribute("fill", colores[i]);
         ruleta.appendChild(path);
 
-        // Posición para texto e imagen: en el centro del sector
         const angle = (i + 0.5) * sectorAngle;
-        const textRadius = radio - 80;
-        const textX = textRadius * Math.cos(angle * Math.PI / 180);
-        const textY = textRadius * Math.sin(angle * Math.PI / 180);
-
-        // Etiqueta texto
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", textX);
-        text.setAttribute("y", textY + 6);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "white");
-        text.setAttribute("font-size", "18");
-        text.style.userSelect = "none";
-        text.style.pointerEvents = "none";
-        text.textContent = etiquetas[i];
-        ruleta.appendChild(text);
-
-        // Imagen en el centro del sector, a un radio más cercano
-        const imgRadius = radio - 150; // un poco más cerca del centro
-        const imgX = imgRadius * Math.cos(angle * Math.PI / 180) - 75; // -75 para centrar imagen de 150px
-        const imgY = imgRadius * Math.sin(angle * Math.PI / 180) - 75;
+        const imgRadius = radio - 72;
+        const imgX = imgRadius * Math.cos(angle * Math.PI / 180) - 62.5;
+        const imgY = imgRadius * Math.sin(angle * Math.PI / 180) - 62.5;
 
         const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
-        img.setAttribute("href", "Sellos/AZUCARES.png");
+        img.setAttribute("href", sellos[i]);
         img.setAttribute("x", imgX);
         img.setAttribute("y", imgY);
-        img.setAttribute("width", 150);
-        img.setAttribute("height", 150);
+        img.setAttribute("width", 125);
+        img.setAttribute("height", 125);
         img.style.pointerEvents = "none";
         ruleta.appendChild(img);
       }
     }
+
     dibujarRuleta();
 
-    // Variables para interacción y rotación
+    // Rotación y física
     let currentAngle = 0;
     let isDragging = false;
     let startAngle = 0;
@@ -194,11 +176,7 @@
       startAngle = getAngle(point.clientX, point.clientY);
       lastAngle = startAngle;
       lastTime = performance.now();
-
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       e.preventDefault();
     }
 
@@ -211,9 +189,7 @@
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
-      // Suavizar el desplazamiento del giro multiplicando delta por 0.6 (menos brusco)
       delta *= 0.6;
-
       currentAngle += delta;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
@@ -236,25 +212,23 @@
     }
 
     function spinDecay() {
-      // Menor fricción para frenado más suave (antes 0.95, ahora 0.97)
       velocity *= 0.97;
-
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
-      // Cambié el cálculo del sector a 7 sectores
-      const sector = Math.floor((360 - (currentAngle % 360) + sectorAngle/2) % 360 / sectorAngle);
+      const sector = Math.floor((360 - (currentAngle % 360) + sectorAngle / 2) % 360 / sectorAngle);
       if (spinDecay.previousSector !== sector) {
         spinDecay.previousSector = sector;
         playClickSound();
       }
 
-      if (Math.abs(velocity) > 0.05) { // se puede bajar el umbral para que frene aún más lento
+      if (Math.abs(velocity) > 0.05) {
         animationFrameId = requestAnimationFrame(spinDecay);
       } else {
         animationFrameId = null;
       }
     }
+
     spinDecay.previousSector = -1;
 
     function onEnd(e) {
@@ -272,7 +246,6 @@
     svg.addEventListener("touchmove", onMove, { passive: false });
     svg.addEventListener("touchend", onEnd);
 
-    // Desbloquear sonido con la primera interacción
     function enableSound() {
       audio.play().then(() => {
         audio.pause();
@@ -281,6 +254,7 @@
       window.removeEventListener("click", enableSound);
       window.removeEventListener("touchstart", enableSound);
     }
+
     window.addEventListener("click", enableSound);
     window.addEventListener("touchstart", enableSound);
   </script>
