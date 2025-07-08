@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ruleta Nutricional</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+
+    #ruleta-container {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 1/1;
+      margin: 0 auto;
+      touch-action: none;
+    }
+
+    #svgRuleta {
+      width: 100%;
+      height: 100%;
+    }
+
+    #ruleta {
+      cursor: grab;
+      transition: transform 0s;
+    }
+
+    .puntero-flecha {
+      filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.5));
+      transform: rotate(180deg);
+      animation: latido 1.2s infinite ease-in-out;
+      transform-origin: 40px 40px;
+      stroke: white;
+      stroke-width: 3;
+      fill: black;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) rotate(180deg);
+      width: 80px;
+      height: 80px;
+      z-index: 10;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    @keyframes latido {
+      0%, 100% { transform: translateX(-50%) rotate(180deg) scale(1); }
+      50% { transform: translateX(-50%) rotate(180deg) scale(1.1); }
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Ruleta de Advertencias Alimentarias</h2>
+
+  <div id="ruleta-container">
+    <svg viewBox="0 0 80 80" class="puntero-flecha">
+      <path d="M 40 0 L 70 40 L 50 40 L 50 80 L 30 80 L 30 40 L 10 40 Z"/>
+    </svg>
+
+    <svg id="svgRuleta" viewBox="0 0 600 600">
+      <g id="ruleta" transform="translate(300 300)">
+        <!-- Sectores generados por JS -->
+      </g>
+    </svg>
+  </div>
+
+  <!-- Sonido clic desde archivo local -->
+  <audio id="clickSound" preload="auto">
+    <source src="click.wav" type="audio/wav">
+  </audio>
+
+  <script>
+    const etiquetas = [
+      "Azúcares", "Grasas Saturadas", "Sodio", "Calorías",
+      "Edulcorantes", "Cafeína", "Grasas Trans", "Ultra Procesado"
+    ];
+
+    const colores = [
+      "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71",
+      "#3498db", "#9b59b6", "#34495e", "#1abc9c"
+    ];
+
+    const ruleta = document.getElementById("ruleta");
+    const svg = document.getElementById("svgRuleta");
+    const radio = 270;
+    const clickSound = document.getElementById("clickSound");
+
+    // Dibujar sectores
+    ruleta.innerHTML = '';
+    for (let i = 0; i < 8; i++) {
+      const start = i * 45 * Math.PI / 180;
+      const end = (i + 1) * 45 * Math.PI / 180;
+
+      const x1 = radio * Math.cos(start);
+      const y1 = radio * Math.sin(start);
+      const x2 = radio * Math.cos(end);
+      const y2 = radio * Math.sin(end);
+
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", `
+        M 0 0
+        L ${x1} ${y1}
+        A ${radio} ${radio} 0 0 1 ${x2} ${y2}
+        Z
+      `);
+      path.setAttribute("fill", colores[i]);
+      ruleta.appendChild(path);
+
+      const angle = (i + 0.5) * 45;
+      const textRadius = radio - 80;
+      const textX = textRadius * Math.cos(angle * Math.PI / 180);
+      const textY = textRadius * Math.sin(angle * Math.PI / 180);
+
+      const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+      text.setAttribute("x", textX);
+      text.setAttribute("y", textY + 6);
+      text.setAttribute("text-anchor", "middle");
+      text.setAttribute("fill", "white");
+      text.setAttribute("font-size", "18");
+      text.textContent = etiquetas[i];
+      text.style.userSelect = "none";
+      text.style.pointerEvents = "none";
+      ruleta.appendChild(text);
+    }
+
+    // GESTOS
+    let currentAngle = 0;
+    let startAngle = 0;
+    let isDragging = false;
+    let lastTime = 0;
+    let lastAngle = 0;
+    let velocity = 0;
+
+    function getAngle(x, y) {
+      const rect = svg.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      return Math.atan2(y - cy, x - cx) * (180 / Math.PI);
+    }
+
+    function startRotate(e) {
+      const point = e.touches ? e.touches[0] : e;
+      isDragging = true;
+      ruleta.style.transition = 'none';
+      startAngle = getAngle(point.clientX, point.clientY);
+      lastAngle = startAngle;
+      lastTime = Date.now();
+      e.preventDefault();
+    }
+
+    function rotate(e) {
+      if (!isDragging) return;
+      const point = e.touches ? e.touches[0] : e;
+      const nowAngle = getAngle(point.clientX, point.clientY);
+      const delta = nowAngle - startAngle;
+      currentAngle += delta;
+      ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
+      const now = Date.now();
+      velocity = (nowAngle - lastAngle) / ((now - lastTime) / 1000);
+      lastAngle = nowAngle;
+      lastTime = now;
+      startAngle = nowAngle;
+    }
+
+    function stopRotate() {
+      if (!isDragging) return;
+      isDragging = false;
+
+      let steps = Math.min(60, Math.abs(Math.round(velocity * 2)));
+      let step = 0;
+      let previousSector = -1;
+
+      const spinInterval = setInterval(() => {
+        const easing = 1 - step / steps;
+        const delta = (velocity * easing) * 0.4;
+        currentAngle += delta;
+
+        ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
+
+        const sector = Math.floor((360 - (currentAngle % 360) + 22.5) % 360 / 45);
+        if (sector !== previousSector) {
+          previousSector = sector;
+          clickSound.currentTime = 0;
+          clickSound.play();
+        }
+
+        step++;
+        if (step >= steps) clearInterval(spinInterval);
+      }, 30);
+    }
+
+    svg.addEventListener("mousedown", startRotate);
+    svg.addEventListener("mousemove", rotate);
+    svg.addEventListener("mouseup", stopRotate);
+    svg.addEventListener("mouseleave", stopRotate);
+    svg.addEventListener("touchstart", startRotate, { passive: false });
+    svg.addEventListener("touchmove", rotate, { passive: false });
+    svg.addEventListener("touchend", stopRotate);
+  </script>
+
+</body>
+</html>
