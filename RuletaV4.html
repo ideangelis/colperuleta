@@ -11,7 +11,7 @@
       background: #f0f0f0;
       margin: 0;
       padding: 20px;
-      -webkit-user-select: none; /* Evitar selección molesta */
+      -webkit-user-select: none;
       user-select: none;
     }
 
@@ -38,26 +38,26 @@
     }
 
     #ruleta {
+      /* No transform-origin CSS aquí: usamos transform SVG */
       transition: transform 0s;
-      transform-origin: center center;
     }
 
     .puntero-flecha {
-      filter: drop-shadow(0px 4px 4px rgba(0, 0, 0, 0.5));
-      transform-origin: 40px 40px;
-      stroke: white;
-      stroke-width: 3;
-      fill: black;
       position: absolute;
       top: 0;
       left: 50%;
       width: 80px;
       height: 80px;
-      z-index: 10;
       pointer-events: none;
       user-select: none;
+      filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+      stroke: white;
+      stroke-width: 3;
+      fill: black;
       animation: latido 1.2s infinite ease-in-out;
       transform: translateX(-50%) rotate(180deg);
+      transform-origin: 40px 40px;
+      z-index: 10;
     }
 
     @keyframes latido {
@@ -105,7 +105,7 @@
     const radio = 270;
     const clickSound = document.getElementById("clickSound");
 
-    // Dibujar sectores y etiquetas
+    // Dibujar sectores y etiquetas centrados en (0,0)
     function dibujarRuleta() {
       ruleta.innerHTML = '';
       for (let i = 0; i < 8; i++) {
@@ -127,6 +127,7 @@
         path.setAttribute("fill", colores[i]);
         ruleta.appendChild(path);
 
+        // Texto en centro del sector
         const angle = (i + 0.5) * 45;
         const textRadius = radio - 80;
         const textX = textRadius * Math.cos(angle * Math.PI / 180);
@@ -134,7 +135,7 @@
 
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", textX);
-        text.setAttribute("y", textY + 6);
+        text.setAttribute("y", textY + 6); // centrado vertical básico
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("fill", "white");
         text.setAttribute("font-size", "18");
@@ -146,7 +147,7 @@
     }
     dibujarRuleta();
 
-    // Variables para rotación
+    // Variables para interacción y rotación
     let currentAngle = 0;
     let isDragging = false;
     let startAngle = 0;
@@ -170,7 +171,7 @@
       lastAngle = startAngle;
       lastTime = performance.now();
 
-      // Cancelar animación si está corriendo
+      // Cancelar animación si existe
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
@@ -181,10 +182,10 @@
     function onMove(e) {
       if (!isDragging) return;
       const point = e.touches ? e.touches[0] : e;
-      const nowAngle = getAngle(point.clientX, point.clientY);
+      let nowAngle = getAngle(point.clientX, point.clientY);
       let delta = nowAngle - startAngle;
 
-      // Ajustar salto de ángulo (caso que cruce 180/-180)
+      // Ajustar para cruzar +/-180°
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
@@ -194,7 +195,6 @@
       const now = performance.now();
       velocity = (nowAngle - lastAngle) / ((now - lastTime) / 1000);
 
-      // Ajustar velocidad igual que delta
       if (velocity > 180) velocity -= 360;
       if (velocity < -180) velocity += 360;
 
@@ -211,7 +211,7 @@
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
-      // Detectar cambio de sector para sonido
+      // Sonido al pasar sector nuevo
       const sector = Math.floor((360 - (currentAngle % 360) + 22.5) % 360 / 45);
       if (spinDecay.previousSector !== sector) {
         spinDecay.previousSector = sector;
@@ -221,7 +221,6 @@
         }
       }
 
-      // Detener si velocidad muy baja
       if (Math.abs(velocity) > 0.1) {
         animationFrameId = requestAnimationFrame(spinDecay);
       } else {
@@ -233,7 +232,6 @@
     function onEnd(e) {
       if (!isDragging) return;
       isDragging = false;
-
       animationFrameId = requestAnimationFrame(spinDecay);
       e.preventDefault();
     }
@@ -246,15 +244,14 @@
     svg.addEventListener("touchmove", onMove, { passive: false });
     svg.addEventListener("touchend", onEnd);
 
-    // Activar sonido en primer interacción (restricciones navegadores)
+    // Activar sonido en primer click/touch para sortear bloqueo autoplay
     function enableSound() {
-      clickSound.play().then(() => clickSound.pause());
+      clickSound.play().then(() => clickSound.pause()).catch(() => {});
       window.removeEventListener("click", enableSound);
       window.removeEventListener("touchstart", enableSound);
     }
     window.addEventListener("click", enableSound);
     window.addEventListener("touchstart", enableSound);
-
   </script>
 
 </body>
