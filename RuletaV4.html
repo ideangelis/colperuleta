@@ -128,7 +128,7 @@
     let lastTime = 0;
     let velocity = 0;
     let animationFrameId;
-    let escalaActual = 1; // escala dinámica para ruleta
+    let escalaActual = 1;
 
     function dibujarRuleta() {
       ruleta.innerHTML = '';
@@ -184,13 +184,12 @@
       const rect = svg.getBoundingClientRect();
       const tamañoDisponible = Math.min(rect.width, rect.height);
       const escala = tamañoDisponible / (2 * radio);
-      escalaActual = escala; // permitimos crecer >1 si cabe
+      escalaActual = escala;
       ruleta.setAttribute("transform", `translate(300 300) scale(${escalaActual}) rotate(${currentAngle})`);
     }
 
     dibujarRuleta();
     ajustarEscala();
-
     window.addEventListener("resize", ajustarEscala);
 
     function getAngle(x, y) {
@@ -259,6 +258,11 @@
         animationFrameId = requestAnimationFrame(spinDecay);
       } else {
         animationFrameId = null;
+
+        // ✅ Vibración al detenerse
+        if (navigator.vibrate) {
+          navigator.vibrate(150);
+        }
       }
     }
 
@@ -294,4 +298,3 @@
 
 </body>
 </html>
-
