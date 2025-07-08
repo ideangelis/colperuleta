@@ -38,7 +38,6 @@
     }
 
     #ruleta {
-      /* No transform-origin CSS aquí: usamos transform SVG */
       transition: transform 0s;
     }
 
@@ -87,7 +86,10 @@
     </svg>
   </div>
 
-  <audio id="clickSound" preload="auto" src="click.wav"></audio>
+  <audio id="audio" preload="auto">
+    <source src="click.wav" type="audio/wav" />
+    <source src="click.wav" type="audio/wave" />
+  </audio>
 
   <script>
     const etiquetas = [
@@ -103,9 +105,9 @@
     const ruleta = document.getElementById("ruleta");
     const svg = document.getElementById("svgRuleta");
     const radio = 270;
-    const clickSound = document.getElementById("clickSound");
+    const audio = document.getElementById("audio");
 
-    // Dibujar sectores y etiquetas centrados en (0,0)
+    // Dibujar sectores y etiquetas
     function dibujarRuleta() {
       ruleta.innerHTML = '';
       for (let i = 0; i < 8; i++) {
@@ -127,7 +129,6 @@
         path.setAttribute("fill", colores[i]);
         ruleta.appendChild(path);
 
-        // Texto en centro del sector
         const angle = (i + 0.5) * 45;
         const textRadius = radio - 80;
         const textX = textRadius * Math.cos(angle * Math.PI / 180);
@@ -135,7 +136,7 @@
 
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", textX);
-        text.setAttribute("y", textY + 6); // centrado vertical básico
+        text.setAttribute("y", textY + 6);
         text.setAttribute("text-anchor", "middle");
         text.setAttribute("fill", "white");
         text.setAttribute("font-size", "18");
@@ -171,7 +172,6 @@
       lastAngle = startAngle;
       lastTime = performance.now();
 
-      // Cancelar animación si existe
       if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
         animationFrameId = null;
@@ -185,7 +185,6 @@
       let nowAngle = getAngle(point.clientX, point.clientY);
       let delta = nowAngle - startAngle;
 
-      // Ajustar para cruzar +/-180°
       if (delta > 180) delta -= 360;
       if (delta < -180) delta += 360;
 
@@ -205,20 +204,21 @@
       e.preventDefault();
     }
 
+    function playClickSound() {
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    }
+
     function spinDecay() {
-      velocity *= 0.95; // fricción
+      velocity *= 0.95;
 
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
-      // Sonido al pasar sector nuevo
       const sector = Math.floor((360 - (currentAngle % 360) + 22.5) % 360 / 45);
       if (spinDecay.previousSector !== sector) {
         spinDecay.previousSector = sector;
-        if (!clickSound.paused) {
-          clickSound.currentTime = 0;
-          clickSound.play().catch(() => {});
-        }
+        playClickSound();
       }
 
       if (Math.abs(velocity) > 0.1) {
@@ -244,9 +244,12 @@
     svg.addEventListener("touchmove", onMove, { passive: false });
     svg.addEventListener("touchend", onEnd);
 
-    // Activar sonido en primer click/touch para sortear bloqueo autoplay
+    // Desbloquear sonido con la primera interacción
     function enableSound() {
-      clickSound.play().then(() => clickSound.pause()).catch(() => {});
+      audio.play().then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+      }).catch(() => {});
       window.removeEventListener("click", enableSound);
       window.removeEventListener("touchstart", enableSound);
     }
