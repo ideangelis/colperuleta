@@ -94,14 +94,16 @@
   </audio>
 
   <script>
+    // Cambié las etiquetas a 7, eliminando "Ultra Procesado"
     const etiquetas = [
       "Azúcares", "Grasas Saturadas", "Sodio", "Calorías",
-      "Edulcorantes", "Cafeína", "Grasas Trans", "Ultra Procesado"
+      "Edulcorantes", "Cafeína", "Grasas Trans"
     ];
 
+    // Colores para 7 sectores
     const colores = [
       "#e74c3c", "#e67e22", "#f1c40f", "#2ecc71",
-      "#3498db", "#9b59b6", "#34495e", "#1abc9c"
+      "#3498db", "#9b59b6", "#34495e"
     ];
 
     const ruleta = document.getElementById("ruleta");
@@ -109,12 +111,15 @@
     const radio = 270;
     const audio = document.getElementById("audio");
 
-    // Dibujar sectores y etiquetas
+    // Ángulo por sector: 360 grados dividido 7
+    const sectorAngle = 360 / 7;
+
+    // Dibujar sectores y etiquetas con imágenes
     function dibujarRuleta() {
       ruleta.innerHTML = '';
-      for (let i = 0; i < 8; i++) {
-        const start = i * 45 * Math.PI / 180;
-        const end = (i + 1) * 45 * Math.PI / 180;
+      for (let i = 0; i < 7; i++) {
+        const start = i * sectorAngle * Math.PI / 180;
+        const end = (i + 1) * sectorAngle * Math.PI / 180;
 
         const x1 = radio * Math.cos(start);
         const y1 = radio * Math.sin(start);
@@ -131,11 +136,13 @@
         path.setAttribute("fill", colores[i]);
         ruleta.appendChild(path);
 
-        const angle = (i + 0.5) * 45;
+        // Posición para texto e imagen: en el centro del sector
+        const angle = (i + 0.5) * sectorAngle;
         const textRadius = radio - 80;
         const textX = textRadius * Math.cos(angle * Math.PI / 180);
         const textY = textRadius * Math.sin(angle * Math.PI / 180);
 
+        // Etiqueta texto
         const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
         text.setAttribute("x", textX);
         text.setAttribute("y", textY + 6);
@@ -146,6 +153,20 @@
         text.style.pointerEvents = "none";
         text.textContent = etiquetas[i];
         ruleta.appendChild(text);
+
+        // Imagen en el centro del sector, a un radio más cercano
+        const imgRadius = radio - 150; // un poco más cerca del centro
+        const imgX = imgRadius * Math.cos(angle * Math.PI / 180) - 75; // -75 para centrar imagen de 150px
+        const imgY = imgRadius * Math.sin(angle * Math.PI / 180) - 75;
+
+        const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
+        img.setAttribute("href", "Sellos/AZUCARES.png");
+        img.setAttribute("x", imgX);
+        img.setAttribute("y", imgY);
+        img.setAttribute("width", 150);
+        img.setAttribute("height", 150);
+        img.style.pointerEvents = "none";
+        ruleta.appendChild(img);
       }
     }
     dibujarRuleta();
@@ -221,7 +242,8 @@
       currentAngle += velocity;
       ruleta.setAttribute("transform", `translate(300 300) rotate(${currentAngle})`);
 
-      const sector = Math.floor((360 - (currentAngle % 360) + 22.5) % 360 / 45);
+      // Cambié el cálculo del sector a 7 sectores
+      const sector = Math.floor((360 - (currentAngle % 360) + sectorAngle/2) % 360 / sectorAngle);
       if (spinDecay.previousSector !== sector) {
         spinDecay.previousSector = sector;
         playClickSound();
