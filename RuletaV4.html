@@ -112,7 +112,7 @@
       "Sellos/SALUDABLE.png",
       "Sellos/GRASASSAT.png",
       "Sellos/CALORIAS.png",
-      "Sellos/SODIO.png"      
+      "Sellos/SODIO.png"
     ];
 
     const ruleta = document.getElementById("ruleta");
@@ -153,33 +153,41 @@
 
         const angle = (i + 0.5) * sectorAngle;
         const angleRad = angle * Math.PI / 180;
-        const baseRadius = radio - 80;
 
+        let baseRadius = radio - 80;
         let imgWidth = 125;
         let imgHeight = 125;
 
-        if (sellos[i].includes("CAFEINA.png")) {
-          imgWidth = 150;
-          imgHeight = 150;
-        } else if (sellos[i].includes("EDULCORANTES.png")) {
-          imgWidth = 150;
-          imgHeight = 150;
-        } else if (sellos[i].includes("SALUDABLE.png")) {
-          imgWidth = 180; // Puedes ajustar el tamaño aquí
+        if (sellos[i].includes("SALUDABLE.png")) {
+          imgWidth = 180;
           imgHeight = 180;
+        } else if (sellos[i].includes("CAFEINA.png") || sellos[i].includes("EDULCORANTES.png")) {
+          imgWidth = 190;
+          imgHeight = 190;
+          baseRadius = radio - 120;
         }
 
-        const imgX = baseRadius * Math.cos(angleRad) - imgWidth / 2;
-        const imgY = baseRadius * Math.sin(angleRad) - imgHeight / 2;
+        const imgX = baseRadius * Math.cos(angleRad);
+        const imgY = baseRadius * Math.sin(angleRad);
 
         const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
         img.setAttribute("href", sellos[i]);
-        img.setAttribute("x", imgX);
-        img.setAttribute("y", imgY);
         img.setAttribute("width", imgWidth);
         img.setAttribute("height", imgHeight);
+        img.setAttribute("x", -imgWidth / 2);
+        img.setAttribute("y", -imgHeight / 2);
         img.style.pointerEvents = "none";
-        ruleta.appendChild(img);
+
+        if (sellos[i].includes("CAFEINA.png") || sellos[i].includes("EDULCORANTES.png")) {
+          const grupo = document.createElementNS("http://www.w3.org/2000/svg", "g");
+          grupo.setAttribute("transform", `translate(${imgX} ${imgY}) rotate(${angle})`);
+          grupo.appendChild(img);
+          ruleta.appendChild(grupo);
+        } else {
+          img.setAttribute("x", imgX - imgWidth / 2);
+          img.setAttribute("y", imgY - imgHeight / 2);
+          ruleta.appendChild(img);
+        }
       }
     }
 
@@ -261,8 +269,6 @@
         animationFrameId = requestAnimationFrame(spinDecay);
       } else {
         animationFrameId = null;
-
-        // ✅ Vibración al detenerse
         if (navigator.vibrate) {
           navigator.vibrate(250);
         }
