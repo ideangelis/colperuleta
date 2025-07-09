@@ -109,10 +109,10 @@
       "Sellos/EDULCORANTES.png",
       "Sellos/CAFEINA.png",
       "Sellos/AZUCARES.png",
+      "Sellos/SALUDABLE.png",
       "Sellos/GRASASSAT.png",
       "Sellos/CALORIAS.png",
-      "Sellos/SODIO.png",
-      "Sellos/SALUDABLE.png"
+      "Sellos/SODIO.png"      
     ];
 
     const ruleta = document.getElementById("ruleta");
@@ -165,8 +165,8 @@
           imgWidth = 150;
           imgHeight = 150;
         } else if (sellos[i].includes("SALUDABLE.png")) {
-          imgWidth = 170; // Puedes ajustar el tamaño aquí
-          imgHeight = 170;
+          imgWidth = 180; // Puedes ajustar el tamaño aquí
+          imgHeight = 180;
         }
 
         const imgX = baseRadius * Math.cos(angleRad) - imgWidth / 2;
